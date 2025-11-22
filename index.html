@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Départ'Quiz by Maresthil - Version Pro</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #8b5cf6;
+            --accent: #f43f5e;
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.75);
+            --text: #f8fafc;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+
+        body {
+            background: radial-gradient(circle at bottom right, #312e81, var(--bg));
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* Background Effects */
+        .orb { position: fixed; border-radius: 50%; filter: blur(90px); z-index: -1; opacity: 0.5; }
+        .orb-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: var(--primary); }
+        .orb-2 { bottom: -10%; right: -10%; width: 40vw; height: 40vw; background: var(--accent); }
+
+        .container { width: 100%; max-width: 550px; display: flex; flex-direction: column; gap: 20px; }
+
+        h1 {
+            text-align: center; font-weight: 800; font-size: 2.2rem;
+            background: linear-gradient(to right, #a5b4fc, #f472b6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .code-display { text-align: center; margin-bottom: 25px; }
+        .code-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 120px; height: 120px;
+            font-size: 3.5rem; font-weight: 900; color: white;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            border-radius: 50%;
+            border: 4px solid rgba(255,255,255,0.15);
+            box-shadow: 0 0 30px rgba(79, 70, 229, 0.4);
+        }
+        .code-label { display: block; margin-top: 15px; color: #94a3b8; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; }
+
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.9rem; color: #cbd5e1; font-weight: 600; }
+        .points-badge { font-size: 0.75rem; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; color: #a5b4fc; }
+        
+        input {
+            width: 100%; background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 14px; border-radius: 12px;
+            color: white; font-size: 1rem; transition: all 0.2s;
+        }
+        input:focus { outline: none; border-color: var(--secondary); box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2); }
+        input:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        .correction {
+            margin-top: 8px; padding: 10px; border-radius: 8px; font-size: 0.9rem;
+            background: rgba(0,0,0,0.2); display: none;
+        }
+
+        .btn {
+            width: 100%; padding: 16px; border-radius: 14px; border: none;
+            font-size: 1.1rem; font-weight: 700; cursor: pointer;
+            transition: all 0.2s; margin-top: 10px;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn-primary { background: linear-gradient(to right, var(--primary), var(--secondary)); color: white; box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.5); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 15px 30px -5px rgba(79, 70, 229, 0.6); }
+        .btn-new { background: rgba(255,255,255,0.1); color: white; display: none; border: 1px solid rgba(255,255,255,0.2); }
+        .btn-new:hover { background: rgba(255,255,255,0.2); }
+
+        /* Score Display */
+        .result-container {
+            margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);
+            display: none; text-align: center;
+        }
+        .final-score { font-size: 3.5rem; font-weight: 900; line-height: 1; margin-bottom: 5px; }
+        .score-bar-bg { width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; margin: 15px 0; overflow: hidden; }
+        .score-bar-fill { height: 100%; width: 0%; background: var(--success); transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+        /* History */
+        .history { margin-top: 10px; }
+        .history h3 { font-size: 1rem; color: #94a3b8; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; }
+        .history-list { display: flex; flex-direction: column; gap: 8px; }
+        .history-item {
+            background: rgba(30, 41, 59, 0.6); padding: 12px; border-radius: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 0.9rem; border-left: 4px solid #64748b;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="container">
+        <h1>Départ'Quiz by Maresthil</h1>
+        
+        <div class="card">
+            <div class="code-display">
+                <div class="code-badge" id="deptCode">--</div>
+                <span class="code-label">Département mystère</span>
+            </div>
+
+            <div id="gameForm">
+                <div class="input-group">
+                    <label>Nom du Département <span class="points-badge">20 pts</span></label>
+                    <input type="text" id="inputNom" placeholder="ex: Gironde" autocomplete="off">
+                    <div class="correction" id="corrNom"></div>
+                </div>
+
+                <div class="input-group">
+                    <label>Préfecture <span class="points-badge">30 pts</span></label>
+                    <input type="text" id="inputPref" placeholder="ex: Bordeaux" autocomplete="off">
+                    <div class="correction" id="corrPref"></div>
+                </div>
+
+                <div class="input-group">
+                    <label>Population <span class="points-badge">25 pts</span></label>
+                    <input type="number" id="inputPop" placeholder="Estimation..." autocomplete="off">
+                    <div class="correction" id="corrPop"></div>
+                </div>
+
+                <div class="input-group">
+                    <label>Nombre de Communes <span class="points-badge">25 pts</span></label>
+                    <input type="number" id="inputCom" placeholder="Estimation..." autocomplete="off">
+                    <div class="correction" id="corrCom"></div>
+                </div>
+
+                <button class="btn btn-primary" id="btnValidate">Valider</button>
+                
+                <div class="result-container" id="resultArea">
+                    <div>Score Final</div>
+                    <div class="final-score" id="scoreValue">0</div>
+                    <div class="score-bar-bg"><div class="score-bar-fill" id="scoreBar"></div></div>
+                    <p id="feedbackText" style="color: #cbd5e1; font-style: italic;"></p>
+                </div>
+
+                <button class="btn btn-new" id="btnNext">Nouveau Département</button>
+            </div>
+        </div>
+
+        <div class="history">
+            <h3>Historique de la session</h3>
+            <div class="history-list" id="historyList"></div>
+        </div>
+    </div>
+
+<script>
+    const data = [
+  { "code": "01", "nom": "Ain", "prefecture": "Bourg-en-Bresse", "population": 686804, "communes": 392 },
+  { "code": "02", "nom": "Aisne", "prefecture": "Saint-Quentin", "population": 536985, "communes": 798 },
+  { "code": "03", "nom": "Allier", "prefecture": "Montluçon", "population": 343338, "communes": 317 },
+  { "code": "04", "nom": "Alpes-de-Haute-Provence", "prefecture": "Digne-les-Bains", "population": 171621, "communes": 198 },
+  { "code": "05", "nom": "Hautes-Alpes", "prefecture": "Gap", "population": 145993, "communes": 162 },
+  { "code": "06", "nom": "Alpes-Maritimes", "prefecture": "Nice", "population": 1128455, "communes": 163 },
+  { "code": "07", "nom": "Ardèche", "prefecture": "Aubenas", "population": 341709, "communes": 335 },
+  { "code": "08", "nom": "Ardennes", "prefecture": "Charleville-Mézières", "population": 273109, "communes": 448 },
+  { "code": "09", "nom": "Ariège", "prefecture": "Pamiers", "population": 159309, "communes": 326 },
+  { "code": "10", "nom": "Aube", "prefecture": "Troyes", "population": 317888, "communes": 431 },
+  { "code": "11", "nom": "Aude", "prefecture": "Carcassonne", "population": 386066, "communes": 433 },
+  { "code": "12", "nom": "Aveyron", "prefecture": "Rodez", "population": 289781, "communes": 285 },
+  { "code": "13", "nom": "Bouches-du-Rhône", "prefecture": "Aix-en-Provence", "population": 2093958, "communes": 134 },
+  { "code": "14", "nom": "Calvados", "prefecture": "Caen", "population": 718172, "communes": 528 },
+  { "code": "15", "nom": "Cantal", "prefecture": "Aurillac", "population": 149242, "communes": 246 },
+  { "code": "16", "nom": "Charente", "prefecture": "Angoulême", "population": 360259, "communes": 362 },
+  { "code": "17", "nom": "Charente-Maritime", "prefecture": "La Rochelle", "population": 683710, "communes": 463 },
+  { "code": "18", "nom": "Cher", "prefecture": "Bourges", "population": 306254, "communes": 286 },
+  { "code": "19", "nom": "Corrèze", "prefecture": "Brive-la-Gaillarde", "population": 247619, "communes": 279 },
+  { "code": "21", "nom": "Côte-d'Or", "prefecture": "Dijon", "population": 549018, "communes": 698 },
+  { "code": "22", "nom": "Côtes-d'Armor", "prefecture": "Saint-Brieuc", "population": 627182, "communes": 348 },
+  { "code": "23", "nom": "Creuse", "prefecture": "Guéret", "population": 118874, "communes": 256 },
+  { "code": "24", "nom": "Dordogne", "prefecture": "Périgueux", "population": 426445, "communes": 503 },
+  { "code": "25", "nom": "Doubs", "prefecture": "Besançon", "population": 562072, "communes": 569 },
+  { "code": "26", "nom": "Drôme", "prefecture": "Valence", "population": 534077, "communes": 363 },
+  { "code": "27", "nom": "Eure", "prefecture": "Évreux", "population": 614731, "communes": 585 },
+  { "code": "28", "nom": "Eure-et-Loir", "prefecture": "Chartres", "population": 442835, "communes": 365 },
+  { "code": "29", "nom": "Finistère", "prefecture": "Brest", "population": 952351, "communes": 277 },
+  { "code": "2A", "nom": "Corse-du-Sud", "prefecture": "Ajaccio", "population": 168376, "communes": 124 },
+  { "code": "2B", "nom": "Haute-Corse", "prefecture": "Bastia", "population": 187843, "communes": 236 },
+  { "code": "30", "nom": "Gard", "prefecture": "Nîmes", "population": 777323, "communes": 351 },
+  { "code": "31", "nom": "Haute-Garonne", "prefecture": "Toulouse", "population": 1479413, "communes": 586 },
+  { "code": "32", "nom": "Gers", "prefecture": "Auch", "population": 198988, "communes": 461 },
+  { "code": "33", "nom": "Gironde", "prefecture": "Bordeaux", "population": 1701107, "communes": 535 },
+  { "code": "34", "nom": "Hérault", "prefecture": "Montpellier", "population": 1235457, "communes": 342 },
+  { "code": "35", "nom": "Ille-et-Vilaine", "prefecture": "Rennes", "population": 1133863, "communes": 332 },
+  { "code": "36", "nom": "Indre", "prefecture": "Châteauroux", "population": 222400, "communes": 241 },
+  { "code": "37", "nom": "Indre-et-Loire", "prefecture": "Tours", "population": 628358, "communes": 272 },
+  { "code": "38", "nom": "Isère", "prefecture": "Grenoble", "population": 1316153, "communes": 512 },
+  { "code": "39", "nom": "Jura", "prefecture": "Lons-le-Saunier", "population": 267295, "communes": 494 },
+  { "code": "40", "nom": "Landes", "prefecture": "Mont-de-Marsan", "population": 440615, "communes": 327 },
+  { "code": "41", "nom": "Loir-et-Cher", "prefecture": "Blois", "population": 337416, "communes": 267 },
+  { "code": "42", "nom": "Loire", "prefecture": "Saint-Étienne", "population": 785855, "communes": 323 },
+  { "code": "43", "nom": "Haute-Loire", "prefecture": "Le Puy-en-Velay", "population": 234921, "communes": 257 },
+  { "code": "44", "nom": "Loire-Atlantique", "prefecture": "Nantes", "population": 1502050, "communes": 207 },
+  { "code": "45", "nom": "Loiret", "prefecture": "Orléans", "population": 701560, "communes": 325 },
+  { "code": "46", "nom": "Lot", "prefecture": "Cahors", "population": 181023, "communes": 313 },
+  { "code": "47", "nom": "Lot-et-Garonne", "prefecture": "Agen", "population": 340185, "communes": 319 },
+  { "code": "48", "nom": "Lozère", "prefecture": "Mende", "population": 80049, "communes": 152 },
+  { "code": "49", "nom": "Maine-et-Loire", "prefecture": "Angers", "population": 848029, "communes": 176 },
+  { "code": "50", "nom": "Manche", "prefecture": "Cherbourg-en-Cotentin", "population": 511634, "communes": 445 },
+  { "code": "51", "nom": "Marne", "prefecture": "Reims", "population": 575111, "communes": 611 },
+  { "code": "52", "nom": "Haute-Marne", "prefecture": "Chaumont", "population": 174637, "communes": 426 },
+  { "code": "53", "nom": "Mayenne", "prefecture": "Laval", "population": 314524, "communes": 240 },
+  { "code": "54", "nom": "Meurthe-et-Moselle", "prefecture": "Nancy", "population": 744052, "communes": 591 },
+  { "code": "55", "nom": "Meuse", "prefecture": "Verdun", "population": 185753, "communes": 499 },
+  { "code": "56", "nom": "Morbihan", "prefecture": "Vannes", "population": 797092, "communes": 249 },
+  { "code": "57", "nom": "Moselle", "prefecture": "Metz", "population": 1068619, "communes": 725 },
+  { "code": "58", "nom": "Nièvre", "prefecture": "Nevers", "population": 207295, "communes": 309 },
+  { "code": "59", "nom": "Nord", "prefecture": "Lille", "population": 2646988, "communes": 648 },
+  { "code": "60", "nom": "Oise", "prefecture": "Beauvais", "population": 848010, "communes": 680 },
+  { "code": "61", "nom": "Orne", "prefecture": "Alençon", "population": 283434, "communes": 385 },
+  { "code": "62", "nom": "Pas-de-Calais", "prefecture": "Arras", "population": 1481487, "communes": 890 },
+  { "code": "63", "nom": "Puy-de-Dôme", "prefecture": "Clermont-Ferrand", "population": 678623, "communes": 464 },
+  { "code": "64", "nom": "Pyrénées-Atlantiques", "prefecture": "Pau", "population": 718206, "communes": 545 },
+  { "code": "65", "nom": "Hautes-Pyrénées", "prefecture": "Tarbes", "population": 237183, "communes": 469 },
+  { "code": "66", "nom": "Pyrénées-Orientales", "prefecture": "Perpignan", "population": 501001, "communes": 226 },
+  { "code": "67", "nom": "Bas-Rhin", "prefecture": "Strasbourg", "population": 1172296, "communes": 514 },
+  { "code": "68", "nom": "Haut-Rhin", "prefecture": "Mulhouse", "population": 781443, "communes": 366 },
+  { "code": "69", "nom": "Rhône", "prefecture": "Villeurbanne", "population": 1933160, "communes": 274 },
+  { "code": "70", "nom": "Haute-Saône", "prefecture": "Vesoul", "population": 239980, "communes": 539 },
+  { "code": "71", "nom": "Saône-et-Loire", "prefecture": "Chalon-sur-Saône", "population": 563990, "communes": 564 },
+  { "code": "72", "nom": "Sarthe", "prefecture": "Le Mans", "population": 579000, "communes": 354 },
+  { "code": "73", "nom": "Savoie", "prefecture": "Chambéry", "population": 457463, "communes": 273 },
+  { "code": "74", "nom": "Haute-Savoie", "prefecture": "Annecy", "population": 869929, "communes": 279 },
+  { "code": "75", "nom": "Paris", "prefecture": "Paris 16e Arrondissement", "population": 2129257, "communes": 20 },
+  { "code": "76", "nom": "Seine-Maritime", "prefecture": "Le Havre", "population": 1280768, "communes": 708 },
+  { "code": "77", "nom": "Seine-et-Marne", "prefecture": "Fontainebleau", "population": 1468459, "communes": 507 },
+  { "code": "78", "nom": "Yvelines", "prefecture": "Saint-Germain-en-Laye", "population": 1493882, "communes": 259 },
+  { "code": "79", "nom": "Deux-Sèvres", "prefecture": "Niort", "population": 385737, "communes": 256 },
+  { "code": "80", "nom": "Somme", "prefecture": "Amiens", "population": 575480, "communes": 772 },
+  { "code": "81", "nom": "Tarn", "prefecture": "Albi", "population": 406186, "communes": 314 },
+  { "code": "82", "nom": "Tarn-et-Garonne", "prefecture": "Montauban", "population": 270664, "communes": 195 },
+  { "code": "83", "nom": "Var", "prefecture": "Toulon", "population": 1124489, "communes": 153 },
+  { "code": "84", "nom": "Vaucluse", "prefecture": "Avignon", "population": 579262, "communes": 151 },
+  { "code": "85", "nom": "Vendée", "prefecture": "La Roche-sur-Yon", "population": 725062, "communes": 255 },
+  { "code": "86", "nom": "Vienne", "prefecture": "Poitiers", "population": 448866, "communes": 265 },
+  { "code": "87", "nom": "Haute-Vienne", "prefecture": "Limoges", "population": 378754, "communes": 195 },
+  { "code": "88", "nom": "Vosges", "prefecture": "Épinal", "population": 369069, "communes": 507 },
+  { "code": "89", "nom": "Yonne", "prefecture": "Auxerre", "population": 342095, "communes": 423 },
+  { "code": "90", "nom": "Territoire de Belfort", "prefecture": "Belfort", "population": 142989, "communes": 101 },
+  { "code": "91", "nom": "Essonne", "prefecture": "Gif-sur-Yvette", "population": 1338107, "communes": 194 },
+  { "code": "92", "nom": "Hauts-de-Seine", "prefecture": "Rueil-Malmaison", "population": 1663026, "communes": 36 },
+  { "code": "93", "nom": "Seine-Saint-Denis", "prefecture": "Saint-Denis", "population": 1688205, "communes": 40 },
+  { "code": "94", "nom": "Val-de-Marne", "prefecture": "Saint-Maur-des-Fossés", "population": 1428350, "communes": 47 },
+  { "code": "95", "nom": "Val-d'Oise", "prefecture": "Pontoise", "population": 1280338, "communes": 183 },
+  { "code": "971", "nom": "Guadeloupe", "prefecture": "Les Abymes", "population": 388197, "communes": 32 },
+  { "code": "972", "nom": "Martinique", "prefecture": "Fort-de-France", "population": 364991, "communes": 34 },
+  { "code": "973", "nom": "Guyane", "prefecture": "Remire-Montjoly", "population": 290476, "communes": 22 },
+  { "code": "974", "nom": "La Réunion", "prefecture": "Saint-Denis", "population": 891190, "communes": 24 }
+];
+
+    let currentDept = null;
+    let isRoundActive = true;
+
+    // DOM Elements
+    const els = {
+        code: document.getElementById('deptCode'),
+        btnVal: document.getElementById('btnValidate'),
+        btnNext: document.getElementById('btnNext'),
+        inputs: {
+            nom: document.getElementById('inputNom'),
+            pref: document.getElementById('inputPref'),
+            pop: document.getElementById('inputPop'),
+            com: document.getElementById('inputCom')
+        },
+        corrections: {
+            nom: document.getElementById('corrNom'),
+            pref: document.getElementById('corrPref'),
+            pop: document.getElementById('corrPop'),
+            com: document.getElementById('corrCom')
+        },
+        result: document.getElementById('resultArea'),
+        scoreVal: document.getElementById('scoreValue'),
+        scoreBar: document.getElementById('scoreBar'),
+        feedback: document.getElementById('feedbackText'),
+        history: document.getElementById('historyList')
+    };
+
+    function initGame() {
+        pickRandomDept();
+    }
+
+    function pickRandomDept() {
+        currentDept = data[Math.floor(Math.random() * data.length)];
+        els.code.innerText = currentDept.code;
+        
+        // Reset UI
+        Object.values(els.inputs).forEach(i => { 
+            i.value = ''; 
+            i.disabled = false; 
+            i.parentElement.querySelector('.points-badge').style.color = '#a5b4fc';
+        });
+        Object.values(els.corrections).forEach(c => c.style.display = 'none');
+        
+        els.result.style.display = 'none';
+        els.scoreBar.style.width = '0%';
+        els.btnVal.style.display = 'block';
+        els.btnNext.style.display = 'none';
+        els.inputs.nom.focus();
+        isRoundActive = true;
+    }
+
+    // Fonction de nettoyage de texte puissante
+    // Enlève accents, met en minuscule, enlève tirets et espaces superflus
+    function normalize(str) {
+        if (!str) return "";
+        return str
+            .normalize("NFD") // Sépare les accents
+            .replace(/[\u0300-\u036f]/g, "") // Supprime les accents
+            .replace(/-/g, " ") // Remplace les tirets par des espaces (pour "Saint-Etienne")
+            .toLowerCase()
+            .trim();
+    }
+
+    function formatNum(num) {
+        return new Intl.NumberFormat('fr-FR').format(num);
+    }
+
+    function calculateScore() {
+        if(!isRoundActive) return;
+        isRoundActive = false;
+
+        // Valeurs Utilisateur (Nettoyées)
+        const userNom = normalize(els.inputs.nom.value);
+        const userPref = normalize(els.inputs.pref.value);
+        const userPop = parseInt(els.inputs.pop.value) || 0;
+        const userCom = parseInt(els.inputs.com.value) || 0;
+
+        // Valeurs Réelles (Nettoyées pour comparaison)
+        const realNomStr = currentDept.nom;
+        const realPrefStr = currentDept.prefecture;
+        const realNomNorm = normalize(realNomStr);
+        const realPrefNorm = normalize(realPrefStr);
+        const realPop = currentDept.population;
+        const realCom = currentDept.communes;
+
+        // 1. Score NOM (20 pts) - Tolérance totale
+        let scoreNom = 0;
+        if (userNom === realNomNorm) {
+            scoreNom = 20;
+        }
+
+        // 2. Score PREFECTURE (30 pts) - Tolérance totale
+        let scorePref = 0;
+        if (userPref === realPrefNorm) {
+            scorePref = 30;
+        }
+
+        // 3. Score POPULATION (25 pts) - Algorithme "Doux"
+        // Formule : Points * (1 - %Erreur).
+        // Si Erreur = 0%, Score = 25. Si Erreur = 50%, Score = 12.5. Si Erreur >= 100%, Score = 0.
+        const diffPop = Math.abs(realPop - userPop);
+        const ratioPop = diffPop / realPop; // ex: 0.1 pour 10% d'erreur
+        let scorePop = Math.max(0, Math.round(25 * (1 - ratioPop)));
+
+        // 4. Score COMMUNES (25 pts) - Même algorithme
+        const diffCom = Math.abs(realCom - userCom);
+        const ratioCom = diffCom / realCom;
+        let scoreCom = Math.max(0, Math.round(25 * (1 - ratioCom)));
+
+        const totalScore = scoreNom + scorePref + scorePop + scoreCom;
+
+        displayResults(totalScore, {
+            nom: scoreNom === 20,
+            pref: scorePref === 30,
+            scorePop: scorePop,
+            scoreCom: scoreCom,
+            realNom: realNomStr,
+            realPref: realPrefStr,
+            realPop: realPop,
+            realCom: realCom
+        });
+    }
+
+    function displayResults(totalScore, d) {
+        // Disable inputs
+        Object.values(els.inputs).forEach(i => i.disabled = true);
+
+        // --- AFFICHAGE CORRECTIONS ---
+        
+        // Nom
+        const cNom = els.corrections.nom;
+        cNom.style.display = 'block';
+        if (d.nom) {
+            cNom.innerHTML = `<span style="color:var(--success)">✅ Correct ! (${d.realNom})</span>`;
+        } else {
+            cNom.innerHTML = `<span style="color:var(--danger)">❌ Raté... C'était : <strong>${d.realNom}</strong></span>`;
+        }
+
+        // Prefecture
+        const cPref = els.corrections.pref;
+        cPref.style.display = 'block';
+        if (d.pref) {
+            cPref.innerHTML = `<span style="color:var(--success)">✅ Correct ! (${d.realPref})</span>`;
+        } else {
+            cPref.innerHTML = `<span style="color:var(--danger)">❌ Raté... C'était : <strong>${d.realPref}</strong></span>`;
+        }
+
+        // Population
+        const cPop = els.corrections.pop;
+        cPop.style.display = 'block';
+        cPop.innerHTML = `Réalité : <strong>${formatNum(d.realPop)}</strong> <span style="color:${getValColor(d.scorePop, 25)}">(+${d.scorePop} pts)</span>`;
+
+        // Communes
+        const cCom = els.corrections.com;
+        cCom.style.display = 'block';
+        cCom.innerHTML = `Réalité : <strong>${d.realCom}</strong> <span style="color:${getValColor(d.scoreCom, 25)}">(+${d.scoreCom} pts)</span>`;
+
+        // --- SCORE FINAL ---
+        els.btnVal.style.display = 'none';
+        els.result.style.display = 'block';
+        els.btnNext.style.display = 'block';
+
+        // Animation Score
+        let current = 0;
+        const step = Math.ceil(totalScore / 50) || 1;
+        const interval = setInterval(() => {
+            current += step;
+            if (current >= totalScore) {
+                current = totalScore;
+                clearInterval(interval);
+            }
+            els.scoreVal.innerText = current;
+            els.scoreBar.style.width = current + '%';
+            els.scoreBar.style.background = getScoreColor(current);
+        }, 15);
+
+        // Feedback
+        let feedback = "";
+        if (totalScore === 100) feedback = "PERFECTION ! Tu es incollable ! 🏆";
+        else if (totalScore >= 80) feedback = "Excellent niveau ! 👏";
+        else if (totalScore >= 50) feedback = "Bien joué, belle culture générale. 👍";
+        else feedback = "Ça viendra avec l'entraînement ! 🗺️";
+        els.feedback.innerText = feedback;
+
+        addToHistory(currentDept.code, d.realNom, totalScore);
+    }
+
+    function getValColor(val, max) {
+        if (val === max) return 'var(--success)';
+        if (val >= max/2) return 'var(--warning)';
+        return 'var(--danger)';
+    }
+
+    function getScoreColor(score) {
+        if(score >= 80) return 'var(--success)';
+        if(score >= 50) return 'var(--warning)';
+        return 'var(--danger)';
+    }
+
+    function addToHistory(code, name, score) {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.style.borderLeftColor = getScoreColor(score);
+        div.innerHTML = `
+            <span><strong>${code}</strong> - ${name}</span>
+            <span style="color:${getScoreColor(score)}; font-weight:bold;">${score}/100</span>
+        `;
+        els.history.prepend(div);
+    }
+
+    els.btnVal.addEventListener('click', calculateScore);
+    els.btnNext.addEventListener('click', pickRandomDept);
+
+    document.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && isRoundActive) calculateScore();
+    });
+
+    initGame();
+</script>
+</body>
+</html>
